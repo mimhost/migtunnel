@@ -1,8 +1,7 @@
 #!/bin/bash
 WKT=$(curl -s ipinfo.io/timezone )
 clear
-echo -e " SEDANG PROSES"
-sleep 2
+
 figlet -f small MIGTUNNEL AUTOSCRIPTSSH | lolcat
 echo -e ""
 echo -e "━━━━━━━━━━━━━━━━━━━━━━━━━━ Menu ━━━━━━━━━━━━━━━━━━━━" | lolcat
