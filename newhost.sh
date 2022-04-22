@@ -14,10 +14,10 @@ mkdir -p /usr/bin/xray
 mkdir -p /etc/xray
 cp /root/domain /etc/xray/
 
-DOMAIN=jagoanneon-premium.me
-SUB_DOMAIN=${sub}.jagoanneon-premium.me
-CF_ID=rohmatimron002@gmail.com
-CF_KEY=4dbce4746bd57c052c9fef9af8d19b1758780
+DOMAIN=iwaksaluang.cf
+SUB_DOMAIN=${sub}.iwaksaluang.cf
+CF_ID=alamyazid13@gmail.com
+CF_KEY=8e3a5871106936479556197772daa54786137
 #DOMAIN=akbar-store.me
 sub=$(</dev/urandom tr -dc a-z0-9 | head -c4)
 #SUB_DOMAIN=${sub}.akbar-store.me
