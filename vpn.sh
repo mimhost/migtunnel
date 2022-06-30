@@ -1,5 +1,9 @@
 #!/bin/bash
-# ==========================================
+#
+# ==================================================
+dateFromServer=$(curl -v --insecure --silent https://google.com/ 2>&1 | grep Date | sed -e 's/< Date: //')
+biji=`date +"%Y-%m-%d" -d "$dateFromServer"`
+#########################
 # Color
 RED='\033[0;31m'
 NC='\033[0m'
@@ -26,21 +30,57 @@ MYIP=$(wget -qO- ipinfo.io/ip);
 MYIP2="s/xxxxxxxxx/$MYIP/g";
 ANU=$(ip -o $ANU -4 route show to default | awk '{print $5}');
 
+# OpenSSH Ports
+SSH_Port1='22'
+SSH_Port2='299'
+Stunnel_Port1='446' # through Dropbear
+Stunnel_Port2='444' # through OpenSSH
+Stunnel_Port3='445' # through Openvpn
+OpenVPN_TCP_Port='1720'
+OpenVPN_UDP_Port='3900'
+Php_Socket='9000'
+Tcp_Monitor_Port='450'
+Udp_Monitor_Port='451'
 
-#!/bin/bash
-#
-# ==================================================
-dateFromServer=$(curl -v --insecure --silent https://google.com/ 2>&1 | grep Date | sed -e 's/< Date: //')
-biji=`date +"%Y-%m-%d" -d "$dateFromServer"`
-#########################
+apt -y install python3-virtualenv geoip-database geoip-database-extra
+ apt -y install git gcc nginx uwsgi uwsgi-plugin-python3 virtualenv python3-dev libgeoip-dev geoip-database geoip-database-extra
 
 
-# initialisasi var
-export DEBIAN_FRONTEND=noninteractive
-OS=`uname -m`;
-MYIP=$(curl -sS ifconfig.me);
-MYIP2="s/xxxxxxxxx/$MYIP/g";
-ANU=$(ip -o $ANU -4 route show to default | awk '{print $5}');
+# Setting Up OpenVPN monitoring
+wget -O /srv/openvpn-monitor.zip "https://github.com/korn-sudo/Project-Fog/raw/main/files/panel/openvpn-monitor.zip"
+cd /srv
+unzip -qq openvpn-monitor.zip
+rm -f openvpn-monitor.zip
+cd openvpn-monitor
+virtualenv -p python3 .
+. bin/activate
+pip install -r requirements.txt
+
+#updating ports for openvpn monitoring
+ sed -i "s|Tcp_Monitor_Port|$Tcp_Monitor_Port|g" /srv/openvpn-monitor/openvpn-monitor.conf
+ sed -i "s|Udp_Monitor_Port|$Udp_Monitor_Port|g" /srv/openvpn-monitor/openvpn-monitor.conf
+
+
+# Creating monitoring .ini for our OpenVPN Monitoring Panel
+cat <<'myMonitorINI' > /etc/uwsgi/apps-available/openvpn-monitor.ini
+[uwsgi]
+base = /srv
+project = openvpn-monitor
+logto = /var/log/uwsgi/app/%(project).log
+plugins = python3
+chdir = %(base)/%(project)
+virtualenv = %(chdir)
+module = openvpn-monitor:application
+manage-script-name = true
+mount=/openvpn-monitor=openvpn-monitor.py
+myMonitorINI
+
+ln -s /etc/uwsgi/apps-available/openvpn-monitor.ini /etc/uwsgi/apps-enabled/
+
+# GeoIP For OpenVPN Monitor
+mkdir -p /var/lib/GeoIP
+wget -O /var/lib/GeoIP/GeoLite2-City.mmdb.gz "https://github.com/korn-sudo/Project-Fog/raw/main/files/panel/GeoLite2-City.mmdb.gz"
+gzip -d /var/lib/GeoIP/GeoLite2-City.mmdb.gz
 
 # Install OpenVPN dan Easy-RSA
 apt install openssl iptables iptables-persistent -y >/dev/null 2>&1
@@ -60,6 +100,14 @@ systemctl enable --now openvpn-server@server-config-udp
 # aktifkan ip4 forwarding
 echo 1 > /proc/sys/net/ipv4/ip_forward
 sed -i 's/net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/g' /etc/sysctl.conf
+
+# Checking if openvpn folder is accidentally deleted or purged
+ if [[ ! -e /etc/openvpn ]]; then
+  mkdir -p /etc/openvpn
+ fi
+
+ # Removing all existing openvpn server files
+ rm -rf /etc/openvpn/*
 
  # Creating server.conf, ca.crt, server.crt and server.key
  cat <<'myOpenVPNconf' > /etc/openvpn/server-tcp.conf
@@ -314,6 +362,50 @@ BPpTD8iMAXYLPgahpq11/ZCVlHxi7i3Oed2YPd2TrET4Lm8Sbh33eKhxBSThooox
 -----END DH PARAMETERS-----
 EOF13
 
+# setting openvpn server port
+ sed -i "s|OVPNTCP|$OpenVPN_TCP_Port|g" /etc/openvpn/server-tcp.conf
+ sed -i "s|OVPNUDP|$OpenVPN_UDP_Port|g" /etc/openvpn/server-udp.conf
+ sed -i "s|IP-ADDRESS|$IPADDR|g" /etc/openvpn/server-tcp.conf
+ sed -i "s|IP-ADDRESS|$IPADDR|g" /etc/openvpn/server-udp.conf
+ sed -i "s|Tcp_Monitor_Port|$Tcp_Monitor_Port|g" /etc/openvpn/server-tcp.conf
+ sed -i "s|Udp_Monitor_Port|$Udp_Monitor_Port|g" /etc/openvpn/server-udp.conf
+
+ # Some workaround for OpenVZ machines for "Startup error" openvpn service
+ if [[ "$(hostnamectl | grep -i Virtualization | awk '{print $2}' | head -n1)" == 'openvz' ]]; then
+ sed -i 's|LimitNPROC|#LimitNPROC|g' /lib/systemd/system/openvpn*
+ systemctl daemon-reload
+fi
+
+ # Allow IPv4 Forwarding
+ sed -i '/net.ipv4.ip_forward.*/d' /etc/sysctl.conf
+ sed -i '/net.ipv4.ip_forward.*/d' /etc/sysctl.d/*.conf
+ echo 'net.ipv4.ip_forward=1' > /etc/sysctl.d/20-openvpn.conf
+ sysctl --system &> /dev/null
+
+ # Iptables Rule for OpenVPN server
+ cat <<'EOFipt' > /etc/openvpn/openvpn.bash
+#!/bin/bash
+PUBLIC_INET="$(ip -4 route ls | grep default | grep -Po '(?<=dev )(\S+)' | head -1)"
+IPCIDR='10.7.0.0/16'
+IPCIDR2='10.8.0.0/16'
+iptables -I FORWARD -s $IPCIDR -j ACCEPT
+iptables -I FORWARD -s $IPCIDR2 -j ACCEPT
+iptables -t nat -A POSTROUTING -o $PUBLIC_INET -j MASQUERADE
+iptables -t nat -A POSTROUTING -s $IPCIDR -o $PUBLIC_INET -j MASQUERADE
+iptables -t nat -A POSTROUTING -s $IPCIDR2 -o $PUBLIC_INET -j MASQUERADE
+EOFipt
+ chmod +x /etc/openvpn/openvpn.bash
+ bash /etc/openvpn/openvpn.bash
+
+ # Enabling IPv4 Forwarding
+ echo 1 > /proc/sys/net/ipv4/ip_forward
+ 
+ # Starting OpenVPN server
+ systemctl start openvpn@server-tcp
+ systemctl enable openvpn@server-tcp
+ systemctl start openvpn@server-udp
+ systemctl enable openvpn@server-udp
+
 
 # Buat config client TCP 1194
 cat > /etc/openvpn/Tcp.ovpn <<-END
@@ -355,7 +447,7 @@ cipher AES-256-CBC
 auth-user-pass
 comp-lzo
 verb 1
-http-proxy $(curl -s http://ipinfo.io/ip || wget -q http://ipinfo.io/ip) 8981
+http-proxy $(curl -s http://ipinfo.io/ip || wget -q http://ipinfo.io/ip) 3128
 http-proxy-option CUSTOM-HEADER Host redirect.googlevideo.com
 http-proxy-option CUSTOM-HEADER X-Forwarded-For redirect.googlevideo.com
 END
@@ -459,7 +551,7 @@ cd
 
 # masukkan certificatenya ke dalam config client TCP 1194
 echo '<ca>' >> /etc/openvpn/Tcp.ovpn
-cat /etc/openvpn/server/ca.crt >> /etc/openvpn/Tcp.ovpn
+cat /etc/openvpn/ca.crt >> /etc/openvpn/Tcp.ovpn
 echo '</ca>' >> /etc/openvpn/Tcp.ovpn
 
 # Copy config OpenVPN client ke home directory root agar mudah didownload ( TCP 1194 )
@@ -467,7 +559,7 @@ cp /etc/openvpn/Tcp.ovpn /home/vps/public_html/Tcp.ovpn
 
 # masukkan certificatenya ke dalam config client UDP 2200
 echo '<ca>' >> /etc/openvpn/Udp.ovpn
-cat /etc/openvpn/server/ca.crt >> /etc/openvpn/Udp.ovpn
+cat /etc/openvpn/ca.crt >> /etc/openvpn/Udp.ovpn
 echo '</ca>' >> /etc/openvpn/Udp.ovpn
 
 # Copy config OpenVPN client ke home directory root agar mudah didownload ( UDP 2200 )
@@ -475,7 +567,7 @@ cp /etc/openvpn/Udp.ovpn /home/vps/public_html/Udp.ovpn
 
 # masukkan certificatenya ke dalam config client SSL
 echo '<ca>' >> /etc/openvpn/SSL.ovpn
-cat /etc/openvpn/server/ca.crt >> /etc/openvpn/SSL.ovpn
+cat /etc/openvpn/ca.crt >> /etc/openvpn/SSL.ovpn
 echo '</ca>' >> /etc/openvpn/SSL.ovpn
 
 # Copy config OpenVPN client ke home directory root agar mudah didownload ( SSL )
@@ -510,21 +602,6 @@ fi
  echo 'net.ipv4.ip_forward=1' > /etc/sysctl.d/20-openvpn.conf
  sysctl --system &> /dev/null
 
- # Iptables Rule for OpenVPN server
- cat <<'EOFipt' > /etc/openvpn/openvpn.bash
-#!/bin/bash
-PUBLIC_INET="$(ip -4 route ls | grep default | grep -Po '(?<=dev )(\S+)' | head -1)"
-IPCIDR='10.200.0.0/16'
-IPCIDR2='10.201.0.0/16'
-iptables -I FORWARD -s $IPCIDR -j ACCEPT
-iptables -I FORWARD -s $IPCIDR2 -j ACCEPT
-iptables -t nat -A POSTROUTING -o $PUBLIC_INET -j MASQUERADE
-iptables -t nat -A POSTROUTING -s $IPCIDR -o $PUBLIC_INET -j MASQUERADE
-iptables -t nat -A POSTROUTING -s $IPCIDR2 -o $PUBLIC_INET -j MASQUERADE
-EOFipt
- chmod +x /etc/openvpn/openvpn.bash
- bash /etc/openvpn/openvpn.bash
-
  # Enabling IPv4 Forwarding
  echo 1 > /proc/sys/net/ipv4/ip_forward
  
@@ -536,6 +613,19 @@ function ip_address(){
   [ ! -z "${IP}" ] && echo "${IP}" || echo
 } 
 IPADDR="$(ip_address)"
+
+# Creating monitoring config for our OpenVPN Monitoring Panel
+cat <<'myMonitoringC' > /etc/nginx/conf.d/monitoring.conf
+
+server {
+    listen 81;
+    location / {
+        uwsgi_pass unix:///run/uwsgi/app/openvpn-monitor/socket;
+        include uwsgi_params;
+    }
+}
+
+myMonitoringC
 
 # Delete script
 mkdir -p /home/vps/public_html/
@@ -550,13 +640,13 @@ cat <<'mySiteOvpn' > /home/vps/public_html/index.html
 
 <head><meta charset="utf-8" /><title>OVPN Config Download</title><meta name="description" content="Server" /><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport" /><meta name="theme-color" content="#000000" /><link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css"><link href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet"><link href="https://cdnjs.cloudflare.com/ajax/libs/mdbootstrap/4.8.3/css/mdb.min.css" rel="stylesheet"></head><body><div class="container justify-content-center" style="margin-top:9em;margin-bottom:5em;"><div class="col-md"><div class="view"><img src="https://openvpn.net/wp-content/uploads/openvpn.jpg" class="card-img-top"><div class="mask rgba-white-slight"></div></div><div class="card"><div class="card-body"><h5 class="card-title">Config List</h5><br /><ul class="list-group">
 
-<li class="list-group-item justify-content-between align-items-center" style="margin-bottom:1em;"><p>TCP <span class="badge light-blue darken-4">Android/iOS/PC/Modem</span><br /><small></small></p><a class="btn btn-outline-success waves-effect btn-sm" href="http://IP-ADDRESSS:81/Tcp.ovpn" style="float:right;"><i class="fa fa-download"></i> Download</a></li>
+<li class="list-group-item justify-content-between align-items-center" style="margin-bottom:1em;"><p>TCP <span class="badge light-blue darken-4">Android/iOS/PC/Modem</span><br /><small></small></p><a class="btn btn-outline-success waves-effect btn-sm" href="http://IP-ADDRESSS:89/Tcp.ovpn" style="float:right;"><i class="fa fa-download"></i> Download</a></li>
 
-<li class="list-group-item justify-content-between align-items-center" style="margin-bottom:1em;"><p>UDP <span class="badge light-blue darken-4">Android/iOS/PC/Modem</span><br /><small></small></p><a class="btn btn-outline-success waves-effect btn-sm" href="http://IP-ADDRESSS:81/Udp.ovpn" style="float:right;"><i class="fa fa-download"></i> Download</a></li>
+<li class="list-group-item justify-content-between align-items-center" style="margin-bottom:1em;"><p>UDP <span class="badge light-blue darken-4">Android/iOS/PC/Modem</span><br /><small></small></p><a class="btn btn-outline-success waves-effect btn-sm" href="http://IP-ADDRESSS:89/Udp.ovpn" style="float:right;"><i class="fa fa-download"></i> Download</a></li>
 
-<li class="list-group-item justify-content-between align-items-center" style="margin-bottom:1em;"><p>SSL <span class="badge light-blue darken-4">Android/iOS/PC/Modem</span><br /><small></small></p><a class="btn btn-outline-success waves-effect btn-sm" href="http://IP-ADDRESSS:81/SSL.ovpn" style="float:right;"><i class="fa fa-download"></i> Download</a></li>
+<li class="list-group-item justify-content-between align-items-center" style="margin-bottom:1em;"><p>SSL <span class="badge light-blue darken-4">Android/iOS/PC/Modem</span><br /><small></small></p><a class="btn btn-outline-success waves-effect btn-sm" href="http://IP-ADDRESSS:89/SSL.ovpn" style="float:right;"><i class="fa fa-download"></i> Download</a></li>
 
-<li class="list-group-item justify-content-between align-items-center" style="margin-bottom:1em;"><p> ALL.zip <span class="badge light-blue darken-4">Android/iOS/PC/Modem</span><br /><small></small></p><a class="btn btn-outline-success waves-effect btn-sm" href="http://IP-ADDRESSS:81/cfg.zip" style="float:right;"><i class="fa fa-download"></i> Download</a></li>
+<li class="list-group-item justify-content-between align-items-center" style="margin-bottom:1em;"><p> ALL.zip <span class="badge light-blue darken-4">Android/iOS/PC/Modem</span><br /><small></small></p><a class="btn btn-outline-success waves-effect btn-sm" href="http://IP-ADDRESSS:89/cfg.zip" style="float:right;"><i class="fa fa-download"></i> Download</a></li>
 
 </ul></div></div></div></div></body></html>
 mySiteOvpn
