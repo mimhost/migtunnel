@@ -22,13 +22,13 @@ source /etc/os-release
 ver=$VERSION_ID
 
 #detail nama perusahaan
-country=ID
-state=Indonesia
-locality=Indonesia
-organization=www.migtunnel.site
-organizationalunit=www.migtunnel.site
-commonname=www.migtunnel.site
-email=admin@migtunnel.site
+country=MY
+state=WPKL
+locality=SETAPAK
+organization=www.aidan.my
+organizationalunit=www.aidan.my
+commonname=www.aidan.my
+email=server@aidan.my
 
 # simple password minimal
 wget -O /etc/pam.d/common-password "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/password"
@@ -119,10 +119,35 @@ apt install libssl1.0-dev -y
 apt install dos2unix -y
 
 # set time GMT +7
-ln -fs /usr/share/zoneinfo/Asia/Jakarta /etc/localtime
+ln -fs /usr/share/zoneinfo/Asia/Kuala_Lumpur /etc/localtime
 
 # set locale
 sed -i 's/AcceptEnv/#AcceptEnv/g' /etc/ssh/sshd_config
+
+cat <<'MySSHConfig' > /etc/ssh/sshd_config
+Port 22
+Port 2443
+AddressFamily inet
+ListenAddress 0.0.0.0
+HostKey /etc/ssh/ssh_host_rsa_key
+HostKey /etc/ssh/ssh_host_ecdsa_key
+HostKey /etc/ssh/ssh_host_ed25519_key
+PermitRootLogin yes
+MaxSessions 1024
+PubkeyAuthentication yes
+PasswordAuthentication yes
+PermitEmptyPasswords no
+ChallengeResponseAuthentication no
+UsePAM yes
+X11Forwarding yes
+PrintMotd no
+ClientAliveInterval 300
+ClientAliveCountMax 2
+UseDNS no
+AcceptEnv LANG LC_*
+Subsystem   sftp  /usr/lib/openssh/sftp-server
+MySSHConfig
+
 
 # install
 apt-get --reinstall --fix-missing install -y bzip2 gzip coreutils wget screen rsyslog iftop htop net-tools zip unzip wget net-tools curl nano sed screen gnupg gnupg1 bc apt-transport-https build-essential dirmngr libxml-parser-perl neofetch git lsof
@@ -250,12 +275,12 @@ accept = 445
 connect = 127.0.0.1:109
 
 [openssh]
-accept = 777
+accept = 444
 connect = 127.0.0.1:2443
 
 [openvpn]
-accept = 990
-connect = 127.0.0.1:1194
+accept = 442
+connect = 127.0.0.1:1720
 
 
 END
