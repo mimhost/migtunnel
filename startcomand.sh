@@ -30,6 +30,69 @@ organizationalunit=www.aidan.my
 commonname=www.aidan.my
 email=server@aidan.my
 
+ # Removing some firewall tools that may affect other services
+ apt-get remove --purge ufw firewalld -y
+ 
+# Installing some important machine essentials
+apt-get install nano sudo wget curl zip unzip tar psmisc build-essential gzip iptables p7zip-full bc rc openssl cron net-tools dnsutils lsof dos2unix lrzsz git qrencode libcap2-bin dbus whois ngrep screen bzip2 ccrypt curl gcc automake autoconf libxml-parser-perl make libtool ruby -y
+
+ 
+# Now installing all our wanted services
+apt-get install dropbear stunnel4 squid privoxy ca-certificates nginx apt-transport-https lsb-release python python-pip python3-pip python-dev python-setuptools libssl-dev -y
+pip install shadowsocks
+pip3 install shadowsocks
+
+# Installing all required packages to install Webmin
+apt-get install perl libnet-ssleay-perl openssl libauthen-pam-perl libpam-runtime libio-pty-perl apt-show-versions python dbus libxml-parser-perl shared-mime-info jq fail2ban -y
+
+ 
+# Installing a text colorizer and design
+gem install lolcat
+apt-get install figlet
+
+# Installing all Web Panel Requirements
+sudo apt-get install lsb-release ca-certificates apt-transport-https software-properties-common -y
+sudo add-apt-repository ppa:ondrej/php -y
+sudo apt-get --allow-unauthenticated upgrade -y
+sudo add-apt-repository ppa:ondrej/nginx -y
+sudo apt-get --allow-unauthenticated upgrade -y
+sudo add-apt-repository universe -y
+sudo apt-get --allow-unauthenticated upgrade -y
+sudo add-apt-repository ppa:maxmind/ppa -y
+sudo apt-get --allow-unauthenticated upgrade -y
+sudo apt-get upgrade --fix-missing -y
+sudo apt-get install -y php8.0 -y
+sudo apt-get install php7.0-fpm -y
+sudo apt-get install php7.0-cli -y
+sudo apt-get install libssh2-1 -y
+sudo apt-get install php-ssh2 -y
+sudo apt-get install libgeoip-dev -y
+sudo apt-get install uwsgi -y
+sudo apt-get install geoipupdate -y
+sudo apt-get install uwsgi-plugin-python -y
+sudo apt-get install --reinstall python-virtualenv -y
+sudo apt-get install --reinstall geoip-database-extra -y
+
+sudo update-alternatives --set php /usr/bin/php7.0
+
+apt-get install php7.0-ssh2 php-ssh2-all-dev -y
+
+ # Installing OpenVPN by pulling its repository inside sources.list file 
+ rm -rf /etc/apt/sources.list.d/openvpn*
+ echo "deb http://build.openvpn.net/debian/openvpn/stable $(lsb_release -sc) main" > /etc/apt/sources.list.d/openvpn.list
+ wget -qO - http://build.openvpn.net/debian/openvpn/stable/pubkey.gpg|apt-key add -
+ apt-get update
+ apt-get install openvpn -y
+
+# Certbot for Domain Self Sign Certification 2.3.4x
+sudo apt-get install certbot -y
+
+# Trying to remove obsolette packages after installation
+apt-get autoremove -y
+apt autoremove --fix-missing -y -f
+echo 1 > /proc/sys/net/ipv6/conf/all/disable_ipv6
+
+
 # simple password minimal
 wget -O /etc/pam.d/common-password "https://raw.githubusercontent.com/mimhost/migtunnel/main/password"
 chmod +x /etc/pam.d/common-password
