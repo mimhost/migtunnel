@@ -31,7 +31,7 @@ commonname=www.aidan.my
 email=server@aidan.my
 
 # simple password minimal
-wget -O /etc/pam.d/common-password "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/password"
+wget -O /etc/pam.d/common-password "https://raw.githubusercontent.com/mimhost/migtunnel/main/password"
 chmod +x /etc/pam.d/common-password
 
 # go to root
@@ -158,8 +158,8 @@ echo "neofetch" >> .profile
 apt -y install nginx php php-fpm php-cli php-mysql libxml-parser-perl
 rm /etc/nginx/sites-enabled/default
 rm /etc/nginx/sites-available/default
-curl https://raw.githubusercontent.com/Alamyazid/migtunnel/main/nginx.conf > /etc/nginx/nginx.conf
-curl https://raw.githubusercontent.com/Alamyazid/migtunnel/main/vps.conf > /etc/nginx/conf.d/vps.conf
+curl https://raw.githubusercontent.com/mimhost/migtunnel/main/nginx.conf > /etc/nginx/nginx.conf
+curl https://raw.githubusercontent.com/mimhost/migtunnel/main/vps.conf > /etc/nginx/conf.d/vps.conf
 sed -i 's/listen = \/var\/run\/php-fpm.sock/listen = 127.0.0.1:9000/g' /etc/php/fpm/pool.d/www.conf
 useradd -m vps;
 mkdir -p /home/vps/public_html
@@ -167,13 +167,13 @@ echo "<?php phpinfo() ?>" > /home/vps/public_html/info.php
 chown -R www-data:www-data /home/vps/public_html
 chmod -R g+rw /home/vps/public_html
 cd /home/vps/public_html
-wget -O /home/vps/public_html/index.html "https://https://raw.githubusercontent.com/Alamyazid/migtunnel/main/index.html1"
+wget -O /home/vps/public_html/index.html "https://https://raw.githubusercontent.com/mimhost/migtunnel/main/index.html1"
 /etc/init.d/nginx restart
 cd
 
 # install badvpn
 cd
-wget -O /usr/bin/badvpn-udpgw "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/badvpn-udpgw64"
+wget -O /usr/bin/badvpn-udpgw "https://raw.githubusercontent.com/mimhost/migtunnel/main/badvpn-udpgw64"
 chmod +x /usr/bin/badvpn-udpgw
 sed -i '$ i\screen -dmS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7100 --max-clients 500' /etc/rc.local
 sed -i '$ i\screen -dmS badvpn badvpn-udpgw --listen-addr 127.0.0.1:7200 --max-clients 500' /etc/rc.local
@@ -236,7 +236,7 @@ systemctl restart sslh
 # install squid
 cd
 apt -y install squid3
-wget -O /etc/squid/squid.conf "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/squid3.conf"
+wget -O /etc/squid/squid.conf "https://raw.githubusercontent.com/mimhost/migtunnel/main/squid3.conf"
 sed -i $MYIP2 /etc/squid/squid.conf
 
 # setting vnstat
@@ -296,10 +296,10 @@ sed -i 's/ENABLED=0/ENABLED=1/g' /etc/default/stunnel4
 /etc/init.d/stunnel4 restart
 
 #OpenVPN
-wget https://raw.githubusercontent.com/Alamyazid/migtunnel/main/vpn.sh && chmod +x vpn.sh && ./vpn.sh
+wget https://raw.githubusercontent.com/mimhost/migtunnel/main/vpn.sh && chmod +x vpn.sh && ./vpn.sh
 
 # Ganti Banner
-wget -O /etc/issue.net "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/issue.net"
+wget -O /etc/issue.net "https://raw.githubusercontent.com/mimhost/migtunnel/main/issue.net"
 
 # install fail2ban
 apt -y install fail2ban
@@ -336,52 +336,52 @@ netfilter-persistent reload
 
 # download script
 cd /usr/bin
-wget -O addhost "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/addhost.sh"
-wget -O newhost "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/newhost.sh"
-wget -O about "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/about.sh"
-wget -O info "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/info.sh"
-wget -O wbmn "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/webmin.sh"
-wget -O menu "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/menu.sh"
-wget -O addssh "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/addssh.sh"
-wget -O delssh "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/delssh.sh"
-wget -O member "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/member.sh"
-wget -O delexp "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/delexp.sh"
-wget -O cekssh "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/cekssh.sh"
-wget -O renewssh "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/renewssh.sh"
-wget -O trial "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/trial/trial.sh"
-wget -O trial-ssh "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/trial/trial-ssh.sh"
-wget -O trial-vmess "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/trial/trial-vmess.sh"
-wget -O trial-vless "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/trial/trial-vless.sh"
-wget -O trial-trojan "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/trial/trial-trojan.sh"
-wget -O trial-trojango "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/trial/trial-trojango.sh"
-wget -O trial-grpc "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/trial/trial-grpc.sh"
-wget -O speedtest "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/speedtest_cli.py"
-wget -O restart "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/restart.sh"
-wget -O autokill "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/autokill.sh"
-wget -O ceklim "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/ceklim.sh"
-wget -O tendang "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/tendang.sh"
-wget -O clearlog "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/clearlog.sh"
-wget -O xp "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/xp.sh"
-wget -O addvmess "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/xray/addv2ray.sh"
-wget -O addvless "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/xray/addvless.sh"
-wget -O addtrojan "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/xray/addtrojan.sh"
-wget -O delvmess "https://https://raw.githubusercontent.com/Alamyazid/migtunnel/main/xray/delv2ray.sh"
-wget -O delvless "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/xray/delvless.sh"
-wget -O deltrojan "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/xray/deltrojan.sh"
-wget -O cekvmess "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/xray/cekv2ray.sh"
-wget -O cekvless "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/xray/cekvless.sh"
-wget -O cektrojan "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/xray/cektrojan.sh"
-wget -O renewvmess "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/xray/renewv2ray.sh"
-wget -O renewvless "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/xray/renewvless.sh"
-wget -O renewtrojan "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/xray/renewtrojan.sh"
-wget -O certv2ray "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/xray/certv2ray.sh"
-wget -O addtrgo "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/trojango/addtrgo.sh"
-wget -O addtrojanws "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/trojango/addtrojanfull.sh"
-wget -O deltrgo "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/trojango/deltrgo.sh"
-wget -O renewtrgo "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/trojango/renewtrgo.sh"
-wget -O cektrgo "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/trojango/cektrgo.sh"
-wget -O running "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/running.sh"
-wget -O sslh-fix "https://raw.githubusercontent.com/Alamyazid/migtunnel/main/sslh/sslh-fix"
+wget -O addhost "https://raw.githubusercontent.com/mimhost/migtunnel/main/addhost.sh"
+wget -O newhost "https://raw.githubusercontent.com/mimhost/migtunnel/main/newhost.sh"
+wget -O about "https://raw.githubusercontent.com/mimhost/migtunnel/main/about.sh"
+wget -O info "https://raw.githubusercontent.com/mimhost/migtunnel/main/info.sh"
+wget -O wbmn "https://raw.githubusercontent.com/mimhost/migtunnel/main/webmin.sh"
+wget -O menu "https://raw.githubusercontent.com/mimhost/migtunnel/main/menu.sh"
+wget -O addssh "https://raw.githubusercontent.com/mimhost/migtunnel/main/addssh.sh"
+wget -O delssh "https://raw.githubusercontent.com/mimhost/migtunnel/main/delssh.sh"
+wget -O member "https://raw.githubusercontent.com/mimhost/migtunnel/main/member.sh"
+wget -O delexp "https://raw.githubusercontent.com/mimhost/migtunnel/main/delexp.sh"
+wget -O cekssh "https://raw.githubusercontent.com/mimhost/migtunnel/main/cekssh.sh"
+wget -O renewssh "https://raw.githubusercontent.com/mimhost/migtunnel/main/renewssh.sh"
+wget -O trial "https://raw.githubusercontent.com/mimhost/migtunnel/main/trial/trial.sh"
+wget -O trial-ssh "https://raw.githubusercontent.com/mimhost/migtunnel/main/trial/trial-ssh.sh"
+wget -O trial-vmess "https://raw.githubusercontent.com/mimhost/migtunnel/main/trial/trial-vmess.sh"
+wget -O trial-vless "https://raw.githubusercontent.com/mimhost/migtunnel/main/trial/trial-vless.sh"
+wget -O trial-trojan "https://raw.githubusercontent.com/mimhost/migtunnel/main/trial/trial-trojan.sh"
+wget -O trial-trojango "https://raw.githubusercontent.com/mimhost/migtunnel/main/trial/trial-trojango.sh"
+wget -O trial-grpc "https://raw.githubusercontent.com/mimhost/migtunnel/main/trial/trial-grpc.sh"
+wget -O speedtest "https://raw.githubusercontent.com/mimhost/migtunnel/main/speedtest_cli.py"
+wget -O restart "https://raw.githubusercontent.com/mimhost/migtunnel/main/restart.sh"
+wget -O autokill "https://raw.githubusercontent.com/mimhost/migtunnel/main/autokill.sh"
+wget -O ceklim "https://raw.githubusercontent.com/mimhost/migtunnel/main/ceklim.sh"
+wget -O tendang "https://raw.githubusercontent.com/mimhost/migtunnel/main/tendang.sh"
+wget -O clearlog "https://raw.githubusercontent.com/mimhost/migtunnel/main/clearlog.sh"
+wget -O xp "https://raw.githubusercontent.com/mimhost/migtunnel/main/xp.sh"
+wget -O addvmess "https://raw.githubusercontent.com/mimhost/migtunnel/main/xray/addv2ray.sh"
+wget -O addvless "https://raw.githubusercontent.com/mimhost/migtunnel/main/xray/addvless.sh"
+wget -O addtrojan "https://raw.githubusercontent.com/mimhost/migtunnel/main/xray/addtrojan.sh"
+wget -O delvmess "https://https://raw.githubusercontent.com/mimhost/migtunnel/main/xray/delv2ray.sh"
+wget -O delvless "https://raw.githubusercontent.com/mimhost/migtunnel/main/xray/delvless.sh"
+wget -O deltrojan "https://raw.githubusercontent.com/mimhost/migtunnel/main/xray/deltrojan.sh"
+wget -O cekvmess "https://raw.githubusercontent.com/mimhost/migtunnel/main/xray/cekv2ray.sh"
+wget -O cekvless "https://raw.githubusercontent.com/mimhost/migtunnel/main/xray/cekvless.sh"
+wget -O cektrojan "https://raw.githubusercontent.com/mimhost/migtunnel/main/xray/cektrojan.sh"
+wget -O renewvmess "https://raw.githubusercontent.com/mimhost/migtunnel/main/xray/renewv2ray.sh"
+wget -O renewvless "https://raw.githubusercontent.com/mimhost/migtunnel/main/xray/renewvless.sh"
+wget -O renewtrojan "https://raw.githubusercontent.com/mimhost/migtunnel/main/xray/renewtrojan.sh"
+wget -O certv2ray "https://raw.githubusercontent.com/mimhost/migtunnel/main/xray/certv2ray.sh"
+wget -O addtrgo "https://raw.githubusercontent.com/mimhost/migtunnel/main/trojango/addtrgo.sh"
+wget -O addtrojanws "https://raw.githubusercontent.com/mimhost/migtunnel/main/trojango/addtrojanfull.sh"
+wget -O deltrgo "https://raw.githubusercontent.com/mimhost/migtunnel/main/trojango/deltrgo.sh"
+wget -O renewtrgo "https://raw.githubusercontent.com/mimhost/migtunnel/main/trojango/renewtrgo.sh"
+wget -O cektrgo "https://raw.githubusercontent.com/mimhost/migtunnel/main/trojango/cektrgo.sh"
+wget -O running "https://raw.githubusercontent.com/mimhost/migtunnel/main/running.sh"
+wget -O sslh-fix "https://raw.githubusercontent.com/mimhost/migtunnel/main/sslh/sslh-fix"
 
 chmod +x addhost
 chmod +x newhost
